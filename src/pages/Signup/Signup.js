@@ -1,40 +1,51 @@
 import React, { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthProvider';
+import toast from 'react-hot-toast';
 
-const Login = () => {
+const Signup = () => {
     const { register, formState: { errors }, handleSubmit } = useForm();
+    const { createUser, updateUser } = useContext(AuthContext);
 
-    const [loginError, setLoginError] = useState('');
+    const [signupError, setSignupError] = useState('');
 
-    const { signIn } = useContext(AuthContext);
-
-    const location = useLocation();
     const navigate = useNavigate();
 
-    const from = location.state?.from?.pathname || '/';
-
-    const handelLogin = data => {
-        setLoginError('');
-        signIn(data.email, data.password)
+    const handelSignUp = data => {
+        console.log(data);
+        setSignupError('');
+        createUser(data.email, data.password)
             .then(result => {
                 const user = result.user;
                 console.log(user);
-                navigate(from, {replace:true});
+                toast.success('Create user successfully');
+                const userInfo = {
+                    displayName: data.name
+                }
+                updateUser(userInfo)
+                .then(()=>{
+                    navigate('/');
+                })
+                .catch(error => console.error(error))
             })
             .catch(error => {
                 console.error(error);
-                setLoginError(error.message);
+                setSignupError(error.message);
             })
     }
-
     return (
         <div className='h-[800px] flex justify-center items-center'>
             <div className='w-96 p-7 border rounded-lg'>
-                <h2 className='text-xl font-bold text-center'>Login</h2>
-                <form onSubmit={handleSubmit(handelLogin)}>
+                <h2 className='text-xl font-bold text-center'>Signup</h2>
+                <form onSubmit={handleSubmit(handelSignUp)}>
+                    <div className="form-control w-full">
+                        <label className="label"><span className="label-text">Name</span></label>
+                        <input type="text"
+                            {...register("name",
+                                { required: "Name is required" })} className="input input-bordered w-full" />
+                        {errors.name && <p className='text-red-600'>{errors.name?.message}</p>}
+                    </div>
                     <div className="form-control w-full">
                         <label className="label"><span className="label-text">Email</span></label>
                         <input type="email"
@@ -49,14 +60,17 @@ const Login = () => {
                                 {
                                     required: "Password is required",
                                     minLength: { value: 6, message: "Password must be 6 characters long" },
+                                    pattern: { value: /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])/, message: "Password must be strong" }
                                 })} className="input input-bordered w-full" />
                         {errors.password && <p className='text-red-600'>{errors.password?.message}</p>}
-                        <p className='text-red-600'>{loginError}</p>
                     </div>
                     <label className="label"><span className="label-text">Forget Password?</span></label>
-                    <input className='btn btn-accent w-full mt-5' value='Login' type="submit" />
+                    <input className='btn btn-accent w-full mt-5' value='Signup' type="submit" />
+                    {
+                        signupError && <p className='text-red-600'>{signupError}</p>
+                    }
                 </form>
-                <p className='text-sm text-center'>New to Doctors Portal? <Link className='text-secondary' to='/signup'>Create New Account</Link></p>
+                <p className='text-sm text-center'>Already have an account? <Link className='text-secondary' to='/login'>Please Login</Link></p>
                 <div className="divider">OR</div>
 
                 <button className='btn btn-outline w-full '>CONTINUE WITH GOOGLE</button>
@@ -66,4 +80,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default Signup;
